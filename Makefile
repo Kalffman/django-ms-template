@@ -49,7 +49,7 @@ endif
 
 
 # setup of python dependencies after ran pyenv as prerequisite
-python_dependencies: pyenv
+python_dependencies: pyenv requirements.txt
 	$(strip $(PYENV_BIN))/pip install -r requirements.txt
 
 
@@ -68,9 +68,10 @@ endif
 
 # Goal to apply django migrations
 migrations:
-	$(PYENV_BIN)/python manage.py makemigrations
-	$(PYENV_BIN)/python manage.py migrate
+	$(strip $(PYENV_BIN))/python manage.py makemigrations
+	$(strip $(PYENV_BIN))/python manage.py migrate
 
 
 # Easy goal to init develoment environment
-local_environment: db_container python_dependencies
+local_environment: db_container python_dependencies migrations
+	$(strip $(PYENV_BIN))/python manage.py createsuperuser --email user@template.com --username admin
