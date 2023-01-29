@@ -3,6 +3,7 @@ DB_CONTAINER_NAME := template-db
 DB_NAME := template
 DB_USER := template-user
 DB_PASS := t3mp14t3
+SKIP_DOT_ENV ?= false
 
 
 # Scripts for check status of db container with docker
@@ -40,8 +41,10 @@ pyenv:
 ifeq ($(PYENV_EXIST), false)
 	python -m venv venv
 endif
+ifeq ($(SKIP_DOT_ENV), false) # if you want to not generate .env type `SKIP_DOT_ENV=true` argument
 ifeq ($(DOT_ENV_EXIST), false)
 	$(COPY_DOT_ENV_COMMAND)
+endif
 endif
 
 
@@ -54,12 +57,19 @@ python_dependencies: pyenv
 db_container:
 ifeq ($(DB_CONTAINER_EXIST), false)
 # --- Creating psql_db container ---
-	docker run --name $(DB_CONTAINER_NAME) -p 3306:3306 -e MYSQL_PASSWORD=$(PSQL_PASS) -e MYSQL_USER=$(PSQL_USER) -e MYSQL_DATABASE=$(PSQL_DB) -e MYSQL_ROOT_PASSWORD=root -d mysql:8
+	docker run --name $(DB_CONTAINER_NAME) -p 3306:3306 -e MYSQL_PASSWORD=$(DB_PASS) -e MYSQL_USER=$(DB_USER) -e MYSQL_DATABASE=$(DB_NAME) -e MYSQL_ROOT_PASSWORD=root -d mysql:8
 endif
 ifeq ($(PSQL_CONTAINER_RUNNING), false)
 # --- Starting psql_db container ---
 	docker start $(PSQL_CONTAINER_NAME)
 endif
+
+
+
+# Goal to apply django migrations
+migrations:
+	$(PYENV_BIN)/python manage.py makemigrations
+	$(PYENV_BIN)/python manage.py migrate
 
 
 # Easy goal to init develoment environment
