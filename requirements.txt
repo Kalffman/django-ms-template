@@ -4,3 +4,5 @@ markdown
 django-filter
 mysqlclient
 django-environ
+django-auditlog
+django-admin-interface
