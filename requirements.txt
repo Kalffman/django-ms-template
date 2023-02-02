@@ -6,3 +6,4 @@ mysqlclient
 django-environ
 django-auditlog
 django-admin-interface
+gunicorn

@@ -3,7 +3,8 @@ DB_CONTAINER_NAME := template-db
 DB_NAME := template
 DB_USER := template-user
 DB_PASS := t3mp14t3
-SKIP_DOT_ENV ?= false
+SKIP_DOT_ENV ?= true
+ENV ?= LOCAL
 
 
 # Scripts for check status of db container with docker
@@ -36,7 +37,8 @@ PYENV_EXIST:=false
 endif
 
 
-# Goal to create virtual python environment using venv ( You can use as your preference :D *** check lno 15 & 19 for compatibilities)
+
+# Goal to create virtual python environment using venv ( You can use as your preference :D *** check ln 17 & 20 for compatibilities)
 pyenv:
 ifeq ($(PYENV_EXIST), false)
 	python -m venv venv
@@ -48,19 +50,21 @@ endif
 endif
 
 
+
 # setup of python dependencies after ran pyenv as prerequisite
 python_dependencies: pyenv requirements.txt
 	$(strip $(PYENV_BIN))/pip install -r requirements.txt
 
 
+
 # Goal to create db container with docker (used mysql as eg)
 db_container:
 ifeq ($(DB_CONTAINER_EXIST), false)
-# --- Creating psql_db container ---
+# --- Creating mysql container ---
 	docker run --name $(DB_CONTAINER_NAME) -p 3306:3306 -e MYSQL_PASSWORD=$(DB_PASS) -e MYSQL_USER=$(DB_USER) -e MYSQL_DATABASE=$(DB_NAME) -e MYSQL_ROOT_PASSWORD=root -d mysql:8
 endif
 ifeq ($(PSQL_CONTAINER_RUNNING), false)
-# --- Starting psql_db container ---
+# --- Starting mysql container ---
 	docker start $(PSQL_CONTAINER_NAME)
 endif
 
@@ -72,6 +76,9 @@ migrations:
 	$(strip $(PYENV_BIN))/python manage.py migrate
 
 
-# Easy goal to init develoment environment
-local_environment: db_container python_dependencies migrations
+
+# Easy goal to init local environment
+environment: db_container python_dependencies migrations
+ifeq ($(ENV), LOCAL)
 	$(strip $(PYENV_BIN))/python manage.py createsuperuser --email user@template.com --username admin
+endif

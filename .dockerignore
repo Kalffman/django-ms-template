@@ -1,0 +1,6 @@
+.env.example
+.env
+venv/
+.git/
+.gitignore
+Makefile
