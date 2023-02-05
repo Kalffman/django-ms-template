@@ -9,15 +9,14 @@ ENV DB_PORT = ''
 ENV SECRET_KEY = ''
 ARG ENV
 
-WORKDIR /usr/src/temp
-
-COPY requiriments.txt .
-
-RUN pip install --upgrade pip
-RUN pip install -r ./requiriments.txt
-RUN SECRET_KEY=${SECRET_KEY:-$(cat /proc/sys/kernel/random/uuid)}
-
 WORKDIR /usr/src/app
+
+COPY . .
+
+RUN pip install --upgrade pip && \
+    pip install -r ./requiriments.txt
+
+RUN SECRET_KEY=${SECRET_KEY:-$(cat /proc/sys/kernel/random/uuid)}
 
 EXPOSE 8000
 
