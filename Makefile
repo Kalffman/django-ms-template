@@ -10,6 +10,7 @@ ENV ?= LOCAL
 # Scripts for check status of db container with docker
 DB_CONTAINER_EXIST := $(if $(shell docker ps -aq -f name=$(DB_CONTAINER_NAME)),true,false)
 DB_CONTAINER_RUNNING := $(if $(shell docker ps -aq -f name=$(DB_CONTAINER_NAME) -f status=running),true,false)
+PSQL_CREATE_SCHEMAS:=psql -U $(PSQL_USER) -d $(PSQL_DB) -c "CREATE SCHEMA IF NOT EXISTS core;"
 
 
 # All custom variables if you want to do things depending on OS 
@@ -60,11 +61,11 @@ python_dependencies: pyenv requirements.txt
 # Goal to create db container with docker (used mysql as eg)
 db_container:
 ifeq ($(DB_CONTAINER_EXIST), false)
-# --- Creating mysql container ---
-	docker run --name $(DB_CONTAINER_NAME) -p 3306:3306 -e MYSQL_PASSWORD=$(DB_PASS) -e MYSQL_USER=$(DB_USER) -e MYSQL_DATABASE=$(DB_NAME) -e MYSQL_ROOT_PASSWORD=root -d mysql:8
+# --- Creating postgres container ---
+	docker run --name $(DB_CONTAINER_NAME) -p 5432:5432 -e MYSQL_PASSWORD=$(DB_PASS) -e POSTGRES_USER=$(DB_USER) -e POSTGRES_DB=$(DB_NAME) -d postgres:15
 endif
-ifeq ($(PSQL_CONTAINER_RUNNING), false)
-# --- Starting mysql container ---
+ifeq ($(DB_CONTAINER_RUNNING), false)
+# --- Starting postgres container ---
 	docker start $(PSQL_CONTAINER_NAME)
 endif
 
@@ -72,8 +73,10 @@ endif
 
 # Goal to apply django migrations
 migrations:
+	docker exec -it $(DB_CONTAINER_NAME) $(PSQL_CREATE_SCHEMAS)
 	$(strip $(PYENV_BIN))/python manage.py makemigrations
 	$(strip $(PYENV_BIN))/python manage.py migrate
+	$(strip $(PYENV_BIN))/python manage.py migrate --database=core
 
 
 
