@@ -3,14 +3,14 @@ DB_CONTAINER_NAME := template-db
 DB_NAME := template
 DB_USER := template-user
 DB_PASS := t3mp14t3
-SKIP_DOT_ENV ?= true
+SKIP_DOT_ENV ?= false
 ENV ?= LOCAL
 
 
 # Scripts for check status of db container with docker
 DB_CONTAINER_EXIST := $(if $(shell docker ps -aq -f name=$(DB_CONTAINER_NAME)),true,false)
 DB_CONTAINER_RUNNING := $(if $(shell docker ps -aq -f name=$(DB_CONTAINER_NAME) -f status=running),true,false)
-PSQL_CREATE_SCHEMAS:=psql -U $(PSQL_USER) -d $(PSQL_DB) -c "CREATE SCHEMA IF NOT EXISTS core;"
+PSQL_CREATE_SCHEMAS:=psql -U $(DB_USER) -d $(DB_NAME) -c "CREATE SCHEMA IF NOT EXISTS core;"
 
 
 # All custom variables if you want to do things depending on OS 
@@ -62,21 +62,20 @@ python_dependencies: pyenv requirements.txt
 db_container:
 ifeq ($(DB_CONTAINER_EXIST), false)
 # --- Creating postgres container ---
-	docker run --name $(DB_CONTAINER_NAME) -p 5432:5432 -e MYSQL_PASSWORD=$(DB_PASS) -e POSTGRES_USER=$(DB_USER) -e POSTGRES_DB=$(DB_NAME) -d postgres:15
-endif
-ifeq ($(DB_CONTAINER_RUNNING), false)
+	docker run --name $(DB_CONTAINER_NAME) -p 5432:5432 -e POSTGRES_PASSWORD=$(DB_PASS) -e POSTGRES_USER=$(DB_USER) -e POSTGRES_DB=$(DB_NAME) -d postgres:15
+else ifeq ($(DB_CONTAINER_RUNNING), false)
 # --- Starting postgres container ---
-	docker start $(PSQL_CONTAINER_NAME)
+	docker start $(DB_CONTAINER_NAME)
 endif
 
 
 
 # Goal to apply django migrations
 migrations:
+	sleep 3
 	docker exec -it $(DB_CONTAINER_NAME) $(PSQL_CREATE_SCHEMAS)
 	$(strip $(PYENV_BIN))/python manage.py makemigrations
 	$(strip $(PYENV_BIN))/python manage.py migrate
-	$(strip $(PYENV_BIN))/python manage.py migrate --database=core
 
 
 
